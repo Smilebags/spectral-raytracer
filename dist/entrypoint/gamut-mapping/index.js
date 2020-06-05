@@ -17,8 +17,6 @@ const modeEl = document.querySelector('#mode');
 const sweepEl = document.querySelector('#sweep');
 const abneySwatchEl = document.querySelector('#abneySwatchLobe');
 const gaussianSwatchEl = document.querySelector('#gaussianSwatchLobe');
-const abneySwatchPinkEl = document.querySelector('#abneySwatchPink');
-const gaussianSwatchPinkEl = document.querySelector('#gaussianSwatchPink');
 const canvasEl = document.querySelector('canvas');
 const canvasOutput = new CanvasOutput(canvasEl, CANVAS_SIZE, CANVAS_SIZE, false, 2.2, 0.18);
 const state = {
@@ -128,9 +126,9 @@ function renderSaturation() {
     //     return gaussianWideningStrategy.desaturate(pinkProgress, desaturationAmount);
     //   });
     // drawPoints(pinkDesaturationSamples);
-    // fillSwatches(lobeDesaturationSamples, pinkDesaturationSamples);
+    fillSwatches(lobeDesaturationSamples);
 }
-function fillSwatches(lobeSamples, pinkSamples) {
+function fillSwatches(lobeSamples) {
     const clippedColour = lobeSamples[1].toRec709().normalise().clamp();
     abneySwatchEl.style.backgroundColor = clippedColour.hex;
     for (let i = 1; i < lobeSamples.length; i++) {
