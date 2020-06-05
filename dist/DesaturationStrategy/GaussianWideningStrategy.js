@@ -34,7 +34,7 @@ export default class GaussianWideningStrategy {
     locusLobeWideningStrategy(wavelength, amount) {
         const width = this.getWidthFromDesaturation(amount);
         const spectrum = new GaussianSpectrum(wavelength, width);
-        return Colour.fromSpectrum(spectrum, 2 ** 9);
+        return Colour.fromSpectrum(spectrum, 2 ** 6);
     }
     ;
 }
