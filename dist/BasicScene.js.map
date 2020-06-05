@@ -1,0 +1,1 @@
+{"version":3,"file":"BasicScene.js","sourceRoot":"","sources":["../src/BasicScene.ts"],"names":[],"mappings":"AAEA,MAAM,CAAC,OAAO,OAAO,UAAU;IAC7B,YAAoB,SAAoB;QAApB,cAAS,GAAT,SAAS,CAAW;IAAG,CAAC;IAE5C,SAAS,CAAC,GAAQ;QAChB,OAAO,IAAI,CAAC,SAAS,CAAC,SAAS,CAAC,GAAG,CAAC,CAAC;IACvC,CAAC;CACF"}
