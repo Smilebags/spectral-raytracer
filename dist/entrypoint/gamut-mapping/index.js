@@ -112,7 +112,6 @@ function renderHue() {
 }
 function renderSaturation() {
     const gaussianWideningStrategy = new GaussianWideningStrategy();
-    console.log(gaussianWideningStrategy.desaturate(550, 1).toxyY());
     const locusWavelength = state.locusWavelength;
     const lobeDesaturationSamples = new Array(DESATURATION_SAMPLES)
         .fill(null)
