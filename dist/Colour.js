@@ -36,6 +36,12 @@ export default class Colour {
         }
         return new Colour(new Vec3(this.triplet.x * colour.triplet.x, this.triplet.y * colour.triplet.y, this.triplet.z * colour.triplet.z), this.colourSpace);
     }
+    divide(colour) {
+        if (typeof colour === 'number') {
+            return this.multiply(1 / colour);
+        }
+        return this.multiply(new Colour(new Vec3(1 / colour.triplet.x, 1 / colour.triplet.y, 1 / colour.triplet.z), colour.colourSpace));
+    }
     add(colour) {
         return new Colour(new Vec3(this.triplet.x + colour.triplet.x, this.triplet.y + colour.triplet.y, this.triplet.z + colour.triplet.z), this.colourSpace);
     }
