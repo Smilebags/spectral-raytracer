@@ -10,6 +10,12 @@
         input {
             width: 1000px;
         }
+        p {
+            color: white;
+        }
+        * {
+            font-family: 'Lucida Sans', 'Lucida Sans Regular', 'Lucida Grande', 'Lucida Sans Unicode', Geneva, Verdana, sans-serif;
+        }
 
         .swatches {
             width: 1000px;
@@ -17,37 +23,41 @@
             grid-template-columns: 1fr 1fr;
             height: 300px;
         }
+        html {
+            background-color: #404040;
+        }
+
+        .swatch {
+            width: 1000px;
+            height: 100px;
+            border: 1px solid black;
+        }
     </style>
 </head>
 <body>
+    <select name="" id="colour-space">
+        <option value="sRGB" selected>sRGB</option>
+        <option value="REC.709">REC.709</option>
+        <option value="REC.2020">REC.2020</option>
+        <option value="DCI-P3">DCI-P3</option>
+        <option value="XYZ">XYZ</option>
+        <option value="xyY">xyY</option>
+    </select><br>
     <input
         type="range"
-        name="locusWavelength"
-        id="locusWavelength"
-        min="360"
-        max="830"
-        step="0.01"
-        value="550"
-    >
-    <input
-        style="display: none"
-        type="range"
-        name="desaturation"
-        id="desaturation"
-        min="0"
-        max="1"
-        step="0.001"
-        value="0.5"
-    >
-    <br />
-    Mode: <button id="mode">saturation</button>
-    <button id="sweep">Sweep values</button><br />
-    <canvas></canvas>
-    <p>Best sRGB representation of spectral colour</p>
-    <p>Channel clipping on the left, gaussian widening desaturation on the right</p>
-    <div class="swatches">
-        <div class="swatch" id="abneySwatchLobe"></div>
-        <div class="swatch" id="gaussianSwatchLobe"></div>
-    </div>
+        id="swatch-wavelength"
+        min="420"
+        max="670"
+        value="420"
+        step="0.1"
+    ><br>
+    <p id="current-wavelength"></p>
+    <canvas id="curve-swatch" class="swatch"></canvas><br>
+    <br>
+    <canvas id="abney-swatch" class="swatch"></canvas><br>
+    <button id="low">Draw draft circle</button><br />
+    <button id="high">Draw high quality circle</button><br />
+    <p>^^ This may take a few minutes</p>
+    <canvas id="circle"></canvas>
 </body>
 </html>

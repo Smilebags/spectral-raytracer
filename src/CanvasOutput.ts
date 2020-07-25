@@ -1,5 +1,10 @@
 import { Vec3, Vec2 } from "./Vec.js";
 import Colour from "./Colour.js";
+import { ColourSpaceName } from "./types/index.js";
+import colourSpaceProviderSingleton from "./ColourSpaceProviderSingleton.js";
+
+const GREY = new Colour(new Vec3(0.5,0.5,0.5),'XYZ', colourSpaceProviderSingleton);
+const BLACK = new Colour(new Vec3(0.1,0.1,0.1),'XYZ', colourSpaceProviderSingleton);
 
 export default class CanvasOutput {
   private context: CanvasRenderingContext2D;
@@ -8,9 +13,9 @@ export default class CanvasOutput {
     private canvasEl: HTMLCanvasElement,
     public width: number = 100,
     public height: number = 100,
-    private clipTooBright = false,
-    private gamma = 2.2,
-    private background = 1,
+    private clipOutOfGamut = false,
+    private targetSpace: ColourSpaceName = 'sRGB',
+    private background: Colour = BLACK,
   ) {
     this.canvasEl.height = height;
     this.canvasEl.width = width;
@@ -18,6 +23,10 @@ export default class CanvasOutput {
     this.imageData = new ImageData(width, height);
     this.clear();
     // setInterval(() => this.redraw(), 50);
+  }
+
+  setTargetSpace(space: ColourSpaceName) {
+    this.targetSpace = space;
   }
 
   drawLine(options: {lineWidth: number, from: Vec2, to: Vec2, color: Colour }): void {
@@ -28,9 +37,8 @@ export default class CanvasOutput {
 
     this.context.lineWidth = lineWidth * this.width;
     this.context.lineCap = 'round';
-    const rgb = color.toRec709().clamp().triplet;
-    const rgbString = `rgb(${(rgb.x ** (1 / this.gamma)) * 255}, ${(rgb.y ** (1 / this.gamma)) * 255}, ${(rgb.z ** (1 / this.gamma)) * 255})`;
-    this.context.strokeStyle = rgbString;
+    const rgb = color.to(this.targetSpace).clamp();
+    this.context.strokeStyle = rgb.hex;
 
     const canvasFrom = this.uvToCanvasCoordinates(from);
     const canvasTo = this.uvToCanvasCoordinates(to);
@@ -48,9 +56,8 @@ export default class CanvasOutput {
     } = options;
     this.context.save();
 
-    const rgb = color.toRec709().clamp().triplet;
-    const rgbString = `rgb(${(rgb.x ** (1 / this.gamma)) * 255}, ${(rgb.y ** (1 / this.gamma)) * 255}, ${(rgb.z ** (1 / this.gamma)) * 255})`;
-    this.context.fillStyle = rgbString;
+    const rgb = color.to(this.targetSpace).clamp();
+    this.context.fillStyle = rgb.hex;
 
     const canvasLocation = this.uvToCanvasCoordinates(location);
     const canvasRadius = radius * this.width;
@@ -75,33 +82,40 @@ export default class CanvasOutput {
   }
 
   clear(redraw = false) {
-    for (let i = 0; i < this.imageData.data.length; i++) {
-      this.imageData.data[i] = i % 4 === 3 ? 255 : this.background * 255;
+    const triplet = this.background.to(this.targetSpace).triplet;
+    for (let i = 0; i < this.imageData.data.length; i += 4) {
+      this.imageData.data[i] = Math.round(triplet.x * 255);
+      this.imageData.data[i + 1] = Math.round(triplet.y * 255);
+      this.imageData.data[i + 2] = Math.round(triplet.z * 255);
+      this.imageData.data[i + 3] = 255;
     }
     if (redraw) { 
       this.redraw();
     }
   }
 
-  setPixel(color: Vec3, coords: Vec2) {
+  setPixel(colour: Colour, coords: Vec2) {
+    const triplet = colour.to(this.targetSpace).triplet;
     const offset = ((coords.y * this.width) + coords.x) * 4;
     if (
-      this.clipTooBright && (
-      color.x >= 1 ||
-      color.y >= 1 ||
-      color.z >= 1 )
+      this.clipOutOfGamut && (
+      triplet.x > 1 ||
+      triplet.y > 1 ||
+      triplet.z > 1 ||
+      triplet.x < 0 ||
+      triplet.y < 0 ||
+      triplet.z < 0 )
     ) {
       this.imageData.data[offset + 0] = 0;
       this.imageData.data[offset + 1] = 0;
       this.imageData.data[offset + 2] = 0;
+      this.imageData.data[offset + 3] = 0;
       return;
     }
-    this.imageData.data[offset + 0] = (color.x ** (1 / this.gamma)) * 255;
-    this.imageData.data[offset + 1] = (color.y ** (1 / this.gamma)) * 255;
-    this.imageData.data[offset + 2] = (color.z ** (1 / this.gamma)) * 255;
-    // this.imageData.data[offset + 0] = color.x <= 1 ? (color.x ** (1 / this.gamma)) * 255 : 0;
-    // this.imageData.data[offset + 1] = color.y <= 1 ? (color.y ** (1 / this.gamma)) * 255 : 0;
-    // this.imageData.data[offset + 2] = color.z <= 1 ? (color.z ** (1 / this.gamma)) * 255 : 0;
+    this.imageData.data[offset + 0] = triplet.x * 255;
+    this.imageData.data[offset + 1] = triplet.y * 255;
+    this.imageData.data[offset + 2] = triplet.z * 255;
+    this.imageData.data[offset + 3] = 255;
   }
 
   redraw() {

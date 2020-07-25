@@ -66,5 +66,13 @@ export interface Ray {
 
 
 export interface DesaturationStrategy {
-  desaturate(wavelength: number, amount: number): Colour;
+  desaturate(wavelength: number, amount: number, integrationSampleCount: number): Colour;
+}
+
+export type ColourSpaceName = 'REC.709' | 'XYZ' | 'xyY' | 'sRGB' | 'REC.2020' | 'DCI-P3';
+
+export interface ColourSpace {
+  name: ColourSpaceName;
+  to(colour: Vec3): Vec3;
+  from(colour: Vec3): Vec3;
 }

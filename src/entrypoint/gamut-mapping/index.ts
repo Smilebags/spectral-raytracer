@@ -5,7 +5,7 @@ import { Vec2, Vec3 } from "../../Vec.js";
 import GaussianWideningStrategy from "../../DesaturationStrategy/GaussianWideningStrategy.js";
 
 
-const WAVELENGTH_LOW = 360;
+const WAVELENGTH_LOW = 390;
 const WAVELENGTH_HIGH = 830;
 
 const LOW_COLOR = Colour.fromWavelength(WAVELENGTH_LOW).normalise();
@@ -26,7 +26,7 @@ const abneySwatchEl = document.querySelector('#abneySwatchLobe') as HTMLDivEleme
 const gaussianSwatchEl = document.querySelector('#gaussianSwatchLobe') as HTMLDivElement;
 
 const canvasEl = document.querySelector('canvas')!;
-const canvasOutput = new CanvasOutput(canvasEl, CANVAS_SIZE, CANVAS_SIZE, false, 2.2, 0.18);
+const canvasOutput = new CanvasOutput(canvasEl, CANVAS_SIZE, CANVAS_SIZE);
 
 
 const state = {
@@ -122,21 +122,21 @@ function render(clear = false) {
 }
 
 function renderHue() {
-  const gaussianWideningStrategy = new GaussianWideningStrategy();
+  const gaussianWideningStrategy = new GaussianWideningStrategy(WAVELENGTH_LOW, WAVELENGTH_HIGH);
   const points = createBoundaryValues(LOCUS_SAMPLES);
-  const colours = points.map(point => gaussianWideningStrategy.desaturate(point, state.desaturation));
+  const colours = points.map(point => gaussianWideningStrategy.desaturate(point, state.desaturation, 2 ** 7));
   drawPoints(colours);
 }
 
 function renderSaturation() {
-  const gaussianWideningStrategy = new GaussianWideningStrategy();
+  const gaussianWideningStrategy = new GaussianWideningStrategy(WAVELENGTH_LOW, WAVELENGTH_HIGH);
 
   const locusWavelength = state.locusWavelength;
   const lobeDesaturationSamples = new Array(DESATURATION_SAMPLES)
     .fill(null)
     .map((item, index) => {
       const desaturationAmount = mapValue(index, 0, DESATURATION_SAMPLES - 1, 0, 1);
-      return gaussianWideningStrategy.desaturate(locusWavelength, desaturationAmount);
+      return gaussianWideningStrategy.desaturate(locusWavelength, desaturationAmount, 2 ** 7);
     });
   drawPoints(lobeDesaturationSamples);
 
@@ -152,14 +152,14 @@ function renderSaturation() {
 }
 
 function fillSwatches(lobeSamples: Colour[]) {
-  const clippedColour = lobeSamples[1].toRec709().normalise().clamp();
+  const clippedColour = lobeSamples[1].to('REC.709').normalise().clamp();
   abneySwatchEl.style.backgroundColor = clippedColour.hex;
 
   for (let i = 1; i < lobeSamples.length; i++) {
     const sample = lobeSamples[i];
-    if (sample.toRec709().allPositive) {
-      console.log(sample.toRec709().normalise().hex);
-      gaussianSwatchEl.style.backgroundColor = sample.toRec709().normalise().hex;
+    if (sample.to('REC.709').allPositive) {
+      console.log(sample.to('REC.709').normalise().hex);
+      gaussianSwatchEl.style.backgroundColor = sample.to('REC.709').normalise().hex;
       break;
     }
   }
@@ -220,7 +220,7 @@ function createBoundarySamples(locusSampleCount: number, pinkEdgeSampleCount: nu
 }
 
 function drawDot(point: Colour): void {
-  const xyYlocation = point.toxyY();
+  const xyYlocation = point.to('xyY');
   const location = new Vec2(xyYlocation.triplet.x, xyYlocation.triplet.y).add(0.1);
   canvasOutput.drawCircle({
     radius: 0.05,
@@ -232,7 +232,7 @@ function drawDot(point: Colour): void {
 function drawPoints(points: Colour[]): void {
   points
     .map(point => {
-      const xyYlocation = point.toxyY();
+      const xyYlocation = point.to('xyY');
       const mappedLocation = new Vec2(xyYlocation.triplet.x, xyYlocation.triplet.y).add(0.1);
         return {
           location: mappedLocation,

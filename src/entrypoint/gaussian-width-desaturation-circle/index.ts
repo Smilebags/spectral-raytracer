@@ -3,130 +3,70 @@ import { mapValue, sleep } from "../../Util.js";
 import CanvasOutput from "../../CanvasOutput.js";
 import { Vec2, Vec3 } from "../../Vec.js";
 import GaussianWideningStrategy from "../../DesaturationStrategy/GaussianWideningStrategy.js";
+import { ColourSpaceName } from "../../types/index.js";
+import colourSpaceProviderSingleton from "../../ColourSpaceProviderSingleton.js";
+
+const colourSpaceOptionEl = document.querySelector('#colour-space') as HTMLOptionElement;
 
 
-const WAVELENGTH_LOW = 360;
-const WAVELENGTH_HIGH = 830;
-
-const LOW_COLOR = Colour.fromWavelength(WAVELENGTH_LOW).normalise();
-const HIGH_COLOR = Colour.fromWavelength(WAVELENGTH_HIGH).normalise();
-
-const LOCUS_SAMPLES = 300;
-const PINK_EDGE_SAMPLES = 40;
-const DESATURATION_SAMPLES = 60;
+const CLIP_OUT_OF_GAMUT = false;
+const WAVELENGTH_LOW = 420;
+const WAVELENGTH_HIGH = 670;
 const CANVAS_SIZE = 1000;
+let DISPLAY_SPACE: ColourSpaceName = colourSpaceOptionEl.value as ColourSpaceName;
 
-const locusEl = document.querySelector('#locusWavelength') as HTMLInputElement;
-const desaturationEl = document.querySelector('#desaturation') as HTMLInputElement;
 
-const modeEl = document.querySelector('#mode') as HTMLButtonElement;
-const sweepEl = document.querySelector('#sweep') as HTMLButtonElement;
+const canvasEl = document.querySelector('canvas#circle')! as HTMLCanvasElement;
+const circleCanvasOutput = new CanvasOutput(canvasEl, CANVAS_SIZE, CANVAS_SIZE, true, DISPLAY_SPACE);
 
-const abneySwatchEl = document.querySelector('#abneySwatchLobe') as HTMLDivElement;
-const gaussianSwatchEl = document.querySelector('#gaussianSwatchLobe') as HTMLDivElement;
+const highQualityEl = document.querySelector('#high') as HTMLButtonElement;
+const lowQualityEl = document.querySelector('#low') as HTMLButtonElement;
+lowQualityEl.addEventListener('click', () => {
+  render();
+});
+highQualityEl.addEventListener('click', () => {
+  render(true);
+});
 
-const canvasEl = document.querySelector('canvas')!;
-const canvasOutput = new CanvasOutput(canvasEl, CANVAS_SIZE, CANVAS_SIZE, false, 2.2, 0.18);
+colourSpaceOptionEl.addEventListener('change', (e) => {
+  //@ts-ignore
+  DISPLAY_SPACE = e.target.value;
+  circleCanvasOutput.setTargetSpace(DISPLAY_SPACE);
+  curveCanvasOutput.setTargetSpace(DISPLAY_SPACE);
+  abneyCanvasOutput.setTargetSpace(DISPLAY_SPACE);
+  circleCanvasOutput.clear();
+  renderSwatches(SWATCH_WAVELENGTH);
+});
 
 
 const state = {
-  mode: 'saturation',
-  desaturation: 0.85,
-  locusWavelength: 550,
-  pinkProgress: 0.5,
-  sweep: false,
+  desaturation: 1,
 };
 
-const boundarySamples = createBoundarySamples(LOCUS_SAMPLES, PINK_EDGE_SAMPLES);
+async function render(highQuality = false) {
+  const SATURATION_SAMPLES = highQuality ? 240 : 220;
 
-render(true);
-
-locusEl.addEventListener('input', (e) => {
-  if (!e) {
-    return;
-  }
-  state.locusWavelength = Number((event!.target as HTMLInputElement).value);
-  render(true);
-});
-desaturationEl.addEventListener('input', (e) => {
-  if (!e) {
-    return;
-  }
-  state.desaturation = Number((event!.target as HTMLInputElement).value);
-  render(true);
-});
-sweepEl.addEventListener('click', () => {
-  sweep();
-});
-modeEl.addEventListener('click', () => {
-  toggleMode();
-});
-
-function toggleMode() {
-  if (state.mode === 'saturation') {
-    state.mode = 'hue';
-    locusEl.style.display = 'none';
-    desaturationEl.style.display = 'block';
-  } else {
-    state.mode = 'saturation';
-    locusEl.style.display = 'block';
-    desaturationEl.style.display = 'none';
-  }
-  modeEl.innerText = state.mode;
-}
-
-async function sweep() {
-  // canvasOutput.clear(true);
-  // drawPoints(boundarySamples);
-  if(state.mode === 'hue') {
-    await sweepHue();
-    return;
-  }
-  if(state.mode === 'saturation') {
-    await sweepSaturation();
-    return;
-  }
-}
-
-async function sweepHue() {
-  const hueSamples = 300;
-  for (let i = 0; i < hueSamples; i++) {
+  for (let i = 0; i < SATURATION_SAMPLES; i++) {
     await sleep(1);
-    state.desaturation = (i / (hueSamples - 1)) ** 1.2;
-    render();
-  }
-}
-async function sweepSaturation() {
-  for (let i = 0; i < 50; i++) {
-    await sleep(1);
-    state.locusWavelength = mapValue(i, 0, 49, WAVELENGTH_LOW, WAVELENGTH_HIGH);
-    state.pinkProgress = mapValue(i, 0, 49, 0, 1);
-    render();
+    state.desaturation = (i / (SATURATION_SAMPLES - 1)) ** 1.2;
+    drawRing(highQuality);
   }
 }
 
+function drawRing(highQuality: boolean) {
+  const HUE_SAMPLES = highQuality ? 720 : 120;
+  const SPECTRUM_SAMPLE_SHIFT = highQuality ? 2 : 0;
 
-
-function render(clear = false) {
-  if (clear) {
-    canvasOutput.clear(true);
-    // drawPoints(boundarySamples);
-  }
-  renderHue();
-  if (state.mode === 'hue') {
-    return;
-  }
-  // if (state.mode === 'saturation') {
-  //   renderSaturation();
-  //   return;
-  // }
-}
-
-function renderHue() {
-  const gaussianWideningStrategy = new GaussianWideningStrategy();
-  const points = createBoundaryValues();
+  const gaussianWideningStrategy = new GaussianWideningStrategy(WAVELENGTH_LOW, WAVELENGTH_HIGH);
+  const points = createBoundaryValues(HUE_SAMPLES);
   const samplePoints = points.map((point, index, arr) => {
-    const colour = gaussianWideningStrategy.desaturate(point, state.desaturation);
+    const spectrumSamplePower = mapValue(state.desaturation ** 2, 0, 1, 6, 4) + SPECTRUM_SAMPLE_SHIFT;
+    const spectrumSampleCount = Math.round(2 ** spectrumSamplePower);
+    const colour = gaussianWideningStrategy.desaturate(
+      point,
+      state.desaturation,
+      spectrumSampleCount,
+    ).multiply(2);
     const progress = mapValue(index, 0, arr.length - 1, 0, Math.PI * 2);
     const radius = mapValue(state.desaturation, 0, 1, 1, 0);
     const location = new Vec2(
@@ -139,105 +79,25 @@ function renderHue() {
   drawPoints(samplePoints);
 }
 
-// function renderSaturation() {
-//   const gaussianWideningStrategy = new GaussianWideningStrategy();
-
-//   const locusWavelength = state.locusWavelength;
-//   const lobeDesaturationSamples = new Array(DESATURATION_SAMPLES)
+// function createBoundaryValues(sampleCount: number) {
+//   return new Array(sampleCount)
 //     .fill(null)
-//     .map((item, index) => {
-//       const desaturationAmount = mapValue(index, 0, DESATURATION_SAMPLES - 1, 0, 1);
-//       return gaussianWideningStrategy.desaturate(locusWavelength, desaturationAmount);
-//     });
-//   drawPoints(lobeDesaturationSamples);
-
-//   // const pinkProgress = state.pinkProgress;
-//   // const pinkDesaturationSamples = new Array(DESATURATION_SAMPLES)
-//   //   .fill(null)
-//   //   .map((item, index) => {
-//   //     const desaturationAmount = mapValue(index, 0, DESATURATION_SAMPLES - 1, 0, 1);
-//   //     return gaussianWideningStrategy.desaturate(pinkProgress, desaturationAmount);
-//   //   });
-//   // drawPoints(pinkDesaturationSamples);
-//   fillSwatches(lobeDesaturationSamples);
+//     .map(
+//       (item, index) => {
+//         const progress = index / (sampleCount - 1);
+//         const firstIndex = findFirstIndex(adjustedCumulative, (item: any) => item[0] >= progress);
+//         const wavelength = adjustedCumulative[firstIndex][1];
+//         return wavelength;
+//       });
 // }
 
-function fillSwatches(lobeSamples: Colour[]) {
-  const clippedColour = lobeSamples[1].toRec709().normalise().clamp();
-  abneySwatchEl.style.backgroundColor = clippedColour.hex;
-
-  for (let i = 1; i < lobeSamples.length; i++) {
-    const sample = lobeSamples[i];
-    if (sample.toRec709().allPositive) {
-      console.log(sample.toRec709().normalise().hex);
-      gaussianSwatchEl.style.backgroundColor = sample.toRec709().normalise().hex;
-      break;
-    }
-  }
-
-  // const clippedPinkColour = pinkSamples[1].toRec709().normalise().clamp();
-  // abneySwatchPinkEl.style.backgroundColor = clippedPinkColour.hex;
-
-  // for (let i = 1; i < pinkSamples.length; i++) {
-  //   const sample = pinkSamples[i];
-  //   if (sample.toRec709().allPositive) {
-  //     console.log(sample.toRec709().normalise().hex);
-  //     gaussianSwatchPinkEl.style.backgroundColor = sample.toRec709().normalise().hex;
-  //     break;
-  //   }
-  // }
-}
-
-
-function createBoundaryValues(locusSampleCount = LOCUS_SAMPLES, pinkEdgeSampleCount = PINK_EDGE_SAMPLES) {
-  const locusPoints = new Array(locusSampleCount)
+function createBoundaryValues(locusSampleCount: number) {
+  return new Array(locusSampleCount)
     .fill(null)
     .map(
       (item, index) => 
         mapValue((index / (locusSampleCount - 1)), 0, 1, WAVELENGTH_LOW, WAVELENGTH_HIGH),
       );
-  
-  // const pinkEdgePoints = new Array(pinkEdgeSampleCount)
-  //   .fill(null)
-  //   .map((item, index) => mapValue(index, 0, pinkEdgeSampleCount - 1, 0, 1)
-  //   );
-  
-  return [
-    ...locusPoints,
-    // ...pinkEdgePoints,
-  ];
-}
-
-
-function createBoundarySamples(locusSampleCount: number, pinkEdgeSampleCount: number) {
-  const locusSamples = new Array(locusSampleCount)
-    .fill(null)
-    .map(
-      (item, index) => Colour.fromWavelength(
-        mapValue((index / (locusSampleCount - 1)), 0, 1, WAVELENGTH_LOW, WAVELENGTH_HIGH),
-      ));
-  
-  // const pinkEdgeSamples = new Array(pinkEdgeSampleCount)
-  //   .fill(null)
-  //   .map((item, index) => LOW_COLOR.lerp(
-  //     HIGH_COLOR,
-  //     mapValue(index, 0, pinkEdgeSampleCount - 1, 0, 1) ** 0.5
-  //   ));
-  
-  return [
-    ...locusSamples,
-    // ...pinkEdgeSamples,
-  ];
-}
-
-function drawDot(point: Colour): void {
-  const xyYlocation = point.toxyY();
-  const location = new Vec2(xyYlocation.triplet.x, xyYlocation.triplet.y).add(0.1);
-  canvasOutput.drawCircle({
-    radius: 0.05,
-    location,
-    color: point,
-  });
 }
 
 function drawPoints(points: { colour: Colour, location: Vec2 }[]): void {
@@ -253,11 +113,129 @@ function drawPoints(points: { colour: Colour, location: Vec2 }[]): void {
       if (index === 0) {
         return;
       }
-      canvasOutput.drawLine({
+      if (isColourOutOfGamut(colour) && CLIP_OUT_OF_GAMUT) {
+        return;
+      }
+      circleCanvasOutput.drawLine({
         lineWidth: 0.003,
         from: arr[index - 1].location,
         to: location,
         color: colour,
       });
   });
+}
+
+function isColourOutOfGamut(colour: Colour): boolean {
+  const inColourSpaceColour = colour.to(DISPLAY_SPACE);
+  return (
+    inColourSpaceColour.triplet.x >= 1 ||
+    inColourSpaceColour.triplet.y >= 1 ||
+    inColourSpaceColour.triplet.z >= 1 ||
+    inColourSpaceColour.triplet.x <= 0 ||
+    inColourSpaceColour.triplet.y <= 0 ||
+    inColourSpaceColour.triplet.z <= 0
+  );
+}
+
+
+const SWATCH_WIDTH = 200;
+const STEP_COUNT = 10;
+const SWATCH_SIZE = SWATCH_WIDTH / STEP_COUNT;
+
+const curveCanvasEl = document.querySelector('canvas#curve-swatch')! as HTMLCanvasElement;
+const abneyCanvasEl = document.querySelector('canvas#abney-swatch')! as HTMLCanvasElement;
+const swatchWavelengthEl = document.querySelector('#swatch-wavelength') as HTMLInputElement;
+let SWATCH_WAVELENGTH = Number(swatchWavelengthEl.value);
+
+swatchWavelengthEl.addEventListener('input', (e) => {
+  //@ts-ignore
+  SWATCH_WAVELENGTH = Number(e.target.value);
+  renderSwatches(SWATCH_WAVELENGTH);
+});
+
+const curveCanvasOutput = new CanvasOutput(
+  curveCanvasEl,
+  SWATCH_WIDTH,
+  10,
+  false,
+  DISPLAY_SPACE,
+);
+const abneyCanvasOutput = new CanvasOutput(
+  abneyCanvasEl,
+  SWATCH_WIDTH,
+  10,
+  false,
+  DISPLAY_SPACE,
+);
+const gaussianWideningStrategy = new GaussianWideningStrategy(WAVELENGTH_LOW, WAVELENGTH_HIGH);
+
+renderSwatches(Number(swatchWavelengthEl.value));
+
+function renderSwatches(wavelength: number) {
+  fillWavelengthDial(wavelength);
+  let startWidth = 0.02;
+  const startSearchStep = 0.005;
+  while(true) {
+    const colour = gaussianWideningStrategy.desaturate(wavelength, startWidth, 2 ** 7);
+    if (colour.to(DISPLAY_SPACE).allPositive) {
+      break;
+    }
+    startWidth += startSearchStep;
+  }
+  const startColour = gaussianWideningStrategy.desaturate(wavelength, startWidth, 2 ** 7);
+  console.log(startWidth);
+  console.log(startColour);
+  renderCurveSwatches(wavelength, startWidth, curveCanvasOutput);
+  renderAbneySwatches(startColour.normalise(), abneyCanvasOutput);
+}
+
+function fillWavelengthDial(wavelength: number) {
+  document.querySelector('#current-wavelength')!.innerHTML = String(wavelength);
+}
+
+
+function renderCurveSwatches(wavelength: number, startWidth: number, canvasOutput: CanvasOutput) {
+  for (let swatchIndex = 0; swatchIndex < STEP_COUNT; swatchIndex++) {
+    const mapped = mapValue(swatchIndex, 0, STEP_COUNT - 1, 0, 1);
+    const stepped = steps(mapped, STEP_COUNT);
+    const desaturation = mapValue(stepped, 0, 1, startWidth, 1);
+    const colour = gaussianWideningStrategy.desaturate(wavelength, desaturation, 2 ** 7);
+    for (let y = 0; y < SWATCH_SIZE; y++) {
+      for (let x = 0; x < SWATCH_SIZE; x++) {
+        canvasOutput.setPixel(
+          colour.to('XYZ').normalise(),
+          new Vec2(x + (swatchIndex * SWATCH_SIZE), y));
+      }
+    }
+  }
+  canvasOutput.redraw();
+}
+
+function renderAbneySwatches(colour: Colour, canvasOutput: CanvasOutput) {
+  const start = 0;
+  for (let swatchIndex = 0; swatchIndex < STEP_COUNT; swatchIndex++) {
+    const mapped = mapValue(swatchIndex, 0, STEP_COUNT - 1, 0, 1);
+    const stepped = steps(mapped, STEP_COUNT);
+    const desaturation = mapValue(stepped, 0, 1, start, 1);
+    const lerpedColour = colour
+    .lerp(
+      new Colour(
+        new Vec3(1,1,1),
+        'XYZ',
+        colourSpaceProviderSingleton,
+      ),
+      desaturation);
+    for (let y = 0; y < SWATCH_SIZE; y++) {
+      for (let x = 0; x < SWATCH_SIZE; x++) {
+        canvasOutput.setPixel(
+          lerpedColour.to(DISPLAY_SPACE),
+          new Vec2((swatchIndex * SWATCH_SIZE) + x, y));
+      }
+    }
+  }
+  canvasOutput.redraw();
+}
+
+function steps(value: number, steps: number): number {
+  return Math.floor(value * steps) / steps;
 }
