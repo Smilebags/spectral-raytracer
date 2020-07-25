@@ -31,4 +31,3 @@ export default class BasicCamera {
         this.film.splat(radiances, sample, pixel);
     }
 }
-//# sourceMappingURL=BasicCamera.js.map

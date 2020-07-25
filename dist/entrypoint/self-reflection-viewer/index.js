@@ -76,4 +76,3 @@ const colourPatchWidth = 4;
     const integrator = new SelfReflectionViewer(camera, illuminants, colours, numberofBounces, colourPatchWidth, colourPatchHeight);
     integrator.render();
 })();
-//# sourceMappingURL=index.js.map

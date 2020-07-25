@@ -19,7 +19,7 @@ const spectrumGradientFunction = (phase) => {
     return Colour.fromWavelength(mapValue(shiftedPhase, 0.3, 1, blue, red));
 };
 export class SpectralColourPicker {
-    constructor(canvas, spectrumSamplingLowWavelength = 360, spectrumSamplingHighWavelength = 830, spectrumSamplingResolution = 64) {
+    constructor(canvas, spectrumSamplingLowWavelength = 390, spectrumSamplingHighWavelength = 830, spectrumSamplingResolution = 64) {
         this.canvas = canvas;
         this.spectrumSamplingLowWavelength = spectrumSamplingLowWavelength;
         this.spectrumSamplingHighWavelength = spectrumSamplingHighWavelength;
@@ -100,4 +100,3 @@ export class SpectralColourPicker {
         requestAnimationFrame(() => this.render());
     }
 }
-//# sourceMappingURL=SpectralColourPicker.js.map

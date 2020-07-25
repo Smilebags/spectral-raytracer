@@ -61,4 +61,3 @@ export default class BasicShape {
         }
     }
 }
-//# sourceMappingURL=BasicShape.js.map

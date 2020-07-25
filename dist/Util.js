@@ -30,4 +30,10 @@ export function logN(value, base) {
 export function sleep(ms) {
     return new Promise(resolve => setTimeout(resolve, ms));
 }
-//# sourceMappingURL=Util.js.map
+export function matrixMultiply(matrix, numbers) {
+    return [
+        matrix[0][0] * numbers[0] + matrix[0][1] * numbers[1] + matrix[0][2] * numbers[2],
+        matrix[1][0] * numbers[0] + matrix[1][1] * numbers[1] + matrix[1][2] * numbers[2],
+        matrix[2][0] * numbers[0] + matrix[2][1] * numbers[1] + matrix[2][2] * numbers[2],
+    ];
+}

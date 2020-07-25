@@ -14,4 +14,3 @@ export default class CoefficientSpectrum {
         return this.sigmoid(parabola);
     }
 }
-//# sourceMappingURL=CoefficientSpectrum.js.map

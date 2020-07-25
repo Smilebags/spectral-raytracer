@@ -10,4 +10,3 @@ export default class ShapePrimitive {
         return {}; // TODO return SurfaceInteraction
     }
 }
-//# sourceMappingURL=ShapePrimitive.js.map

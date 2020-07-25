@@ -39,4 +39,3 @@ export default class RandomSampler {
         return this.currentPixelSampleIndex < this.samplesPerPixel;
     }
 }
-//# sourceMappingURL=RandomSampler.js.map

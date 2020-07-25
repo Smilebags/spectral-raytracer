@@ -45,4 +45,3 @@ integrator.render(scene);
 // testRay.direction = new Vec3(10, 0, 1).normalise();
 // testIntersection = shape.intersect(testRay);
 // console.log(testIntersection);
-//# sourceMappingURL=index.js.map

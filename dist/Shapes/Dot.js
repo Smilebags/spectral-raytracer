@@ -16,4 +16,3 @@ export default class Dot {
         ctx.restore();
     }
 }
-//# sourceMappingURL=Dot.js.map

@@ -25,4 +25,3 @@ export default class CircleGradient {
         }
     }
 }
-//# sourceMappingURL=CircleGradient.js.map

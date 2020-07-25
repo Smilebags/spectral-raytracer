@@ -62,4 +62,3 @@ export default class SelfReflectionViewer {
         return radiances;
     }
 }
-//# sourceMappingURL=SelfReflectionViewer.js.map

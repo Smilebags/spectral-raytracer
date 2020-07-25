@@ -13,4 +13,3 @@ export class GaussianSpectrum {
         return this.curve(wavelength);
     }
 }
-//# sourceMappingURL=GaussianSpectrum.js.map

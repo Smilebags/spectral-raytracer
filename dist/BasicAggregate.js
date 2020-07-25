@@ -15,4 +15,3 @@ export default class BasicAggregate {
         return surfaceInteraction;
     }
 }
-//# sourceMappingURL=BasicAggregate.js.map

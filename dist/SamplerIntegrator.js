@@ -49,4 +49,3 @@ export default class SamplerIntegrator {
         return radiances;
     }
 }
-//# sourceMappingURL=SamplerIntegrator.js.map

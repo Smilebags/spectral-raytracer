@@ -43,6 +43,9 @@ export class Vec3 {
         this.y = y;
         this.z = z;
     }
+    static fromArray(numbers) {
+        return new Vec3(...numbers);
+    }
     add(other) {
         return new Vec3(this.x + other.x, this.y + other.y, this.z + other.z);
     }
@@ -73,5 +76,11 @@ export class Vec3 {
     cross(v) {
         return new Vec3((this.y * v.z) - (this.z * v.y), (this.z * v.x) - (this.x * v.z), (this.x * v.y) - (this.y * v.x));
     }
+    toArray() {
+        return [
+            this.x,
+            this.y,
+            this.z,
+        ];
+    }
 }
-//# sourceMappingURL=Vec.js.map

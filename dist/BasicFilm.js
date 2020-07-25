@@ -74,4 +74,3 @@ export default class BasicFilm {
         // }
     }
 }
-//# sourceMappingURL=BasicFilm.js.map

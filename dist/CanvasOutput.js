@@ -1,11 +1,15 @@
-import { Vec2 } from "./Vec.js";
+import { Vec3, Vec2 } from "./Vec.js";
+import Colour from "./Colour.js";
+import colourSpaceProviderSingleton from "./ColourSpaceProviderSingleton.js";
+const GREY = new Colour(new Vec3(0.5, 0.5, 0.5), 'XYZ', colourSpaceProviderSingleton);
+const BLACK = new Colour(new Vec3(0.1, 0.1, 0.1), 'XYZ', colourSpaceProviderSingleton);
 export default class CanvasOutput {
-    constructor(canvasEl, width = 100, height = 100, clipTooBright = false, gamma = 2.2, background = 1) {
+    constructor(canvasEl, width = 100, height = 100, clipOutOfGamut = false, targetSpace = 'sRGB', background = BLACK) {
         this.canvasEl = canvasEl;
         this.width = width;
         this.height = height;
-        this.clipTooBright = clipTooBright;
-        this.gamma = gamma;
+        this.clipOutOfGamut = clipOutOfGamut;
+        this.targetSpace = targetSpace;
         this.background = background;
         this.canvasEl.height = height;
         this.canvasEl.width = width;
@@ -14,14 +18,16 @@ export default class CanvasOutput {
         this.clear();
         // setInterval(() => this.redraw(), 50);
     }
+    setTargetSpace(space) {
+        this.targetSpace = space;
+    }
     drawLine(options) {
         const { lineWidth, from, to, color } = options;
         this.context.save();
         this.context.lineWidth = lineWidth * this.width;
         this.context.lineCap = 'round';
-        const rgb = color.toRec709().clamp().triplet;
-        const rgbString = `rgb(${(rgb.x ** (1 / this.gamma)) * 255}, ${(rgb.y ** (1 / this.gamma)) * 255}, ${(rgb.z ** (1 / this.gamma)) * 255})`;
-        this.context.strokeStyle = rgbString;
+        const rgb = color.to(this.targetSpace).clamp();
+        this.context.strokeStyle = rgb.hex;
         const canvasFrom = this.uvToCanvasCoordinates(from);
         const canvasTo = this.uvToCanvasCoordinates(to);
         this.context.beginPath();
@@ -33,9 +39,8 @@ export default class CanvasOutput {
     drawCircle(options) {
         const { radius, location, color } = options;
         this.context.save();
-        const rgb = color.toRec709().clamp().triplet;
-        const rgbString = `rgb(${(rgb.x ** (1 / this.gamma)) * 255}, ${(rgb.y ** (1 / this.gamma)) * 255}, ${(rgb.z ** (1 / this.gamma)) * 255})`;
-        this.context.fillStyle = rgbString;
+        const rgb = color.to(this.targetSpace).clamp();
+        this.context.fillStyle = rgb.hex;
         const canvasLocation = this.uvToCanvasCoordinates(location);
         const canvasRadius = radius * this.width;
         this.context.beginPath();
@@ -47,32 +52,38 @@ export default class CanvasOutput {
         return new Vec2(uv.x * this.width, (1 - uv.y) * this.height);
     }
     clear(redraw = false) {
-        for (let i = 0; i < this.imageData.data.length; i++) {
-            this.imageData.data[i] = i % 4 === 3 ? 255 : this.background * 255;
+        const triplet = this.background.to(this.targetSpace).triplet;
+        for (let i = 0; i < this.imageData.data.length; i += 4) {
+            this.imageData.data[i] = Math.round(triplet.x * 255);
+            this.imageData.data[i + 1] = Math.round(triplet.y * 255);
+            this.imageData.data[i + 2] = Math.round(triplet.z * 255);
+            this.imageData.data[i + 3] = 255;
         }
         if (redraw) {
             this.redraw();
         }
     }
-    setPixel(color, coords) {
+    setPixel(colour, coords) {
+        const triplet = colour.to(this.targetSpace).triplet;
         const offset = ((coords.y * this.width) + coords.x) * 4;
-        if (this.clipTooBright && (color.x >= 1 ||
-            color.y >= 1 ||
-            color.z >= 1)) {
+        if (this.clipOutOfGamut && (triplet.x > 1 ||
+            triplet.y > 1 ||
+            triplet.z > 1 ||
+            triplet.x < 0 ||
+            triplet.y < 0 ||
+            triplet.z < 0)) {
             this.imageData.data[offset + 0] = 0;
             this.imageData.data[offset + 1] = 0;
             this.imageData.data[offset + 2] = 0;
+            this.imageData.data[offset + 3] = 0;
             return;
         }
-        this.imageData.data[offset + 0] = (color.x ** (1 / this.gamma)) * 255;
-        this.imageData.data[offset + 1] = (color.y ** (1 / this.gamma)) * 255;
-        this.imageData.data[offset + 2] = (color.z ** (1 / this.gamma)) * 255;
-        // this.imageData.data[offset + 0] = color.x <= 1 ? (color.x ** (1 / this.gamma)) * 255 : 0;
-        // this.imageData.data[offset + 1] = color.y <= 1 ? (color.y ** (1 / this.gamma)) * 255 : 0;
-        // this.imageData.data[offset + 2] = color.z <= 1 ? (color.z ** (1 / this.gamma)) * 255 : 0;
+        this.imageData.data[offset + 0] = triplet.x * 255;
+        this.imageData.data[offset + 1] = triplet.y * 255;
+        this.imageData.data[offset + 2] = triplet.z * 255;
+        this.imageData.data[offset + 3] = 255;
     }
     redraw() {
         this.context.putImageData(this.imageData, 0, 0, 0, 0, this.width, this.height);
     }
 }
-//# sourceMappingURL=CanvasOutput.js.map

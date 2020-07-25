@@ -9,4 +9,3 @@ export class ParabolicSpectrum {
         return parabolic(this.center, this.spread, this.gain)(wavelength);
     }
 }
-//# sourceMappingURL=ParabolicSpectrum.js.map

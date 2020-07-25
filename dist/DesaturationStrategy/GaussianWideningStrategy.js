@@ -1,8 +1,7 @@
 import { GaussianSpectrum } from "../Spectrum/GaussianSpectrum.js";
 import Colour from "../Colour.js";
-import { mapValue } from "../Util.js";
 export default class GaussianWideningStrategy {
-    constructor(wavelengthLow = 360, wavelengthHigh = 830) {
+    constructor(wavelengthLow, wavelengthHigh) {
         this.wavelengthLow = wavelengthLow;
         this.wavelengthHigh = wavelengthHigh;
         this.wavelengthRange = this.wavelengthHigh - this.wavelengthLow;
@@ -11,34 +10,29 @@ export default class GaussianWideningStrategy {
         if (desaturation <= 0) {
             return 0;
         }
-        if (desaturation >= 1) {
-            return 10 ** 10;
-        }
-        // return (1 / ((desaturation - 1) ** 2)) - 1;
-        return mapValue(desaturation, 0, 1, 0.1, 200);
+        return 50 * Math.log(1 / (1 - desaturation));
     }
-    desaturate(wavelength, amount) {
-        const primary = this.locusLobeWideningStrategy(wavelength, amount);
-        const above = this.locusLobeWideningStrategy(wavelength + this.wavelengthRange, amount);
-        const below = this.locusLobeWideningStrategy(wavelength - this.wavelengthRange, amount);
-        // const totalAboveEnergy = primary.sum + above.sum + below.sum;
-        // const totalBelowEnergy = primary.sum + above.sum + below.sum;
-        // const aboveFactor = above.sum / totalAboveEnergy;
-        // const belowFactor = below.sum / totalBelowEnergy;
-        // const scaledPrimary = primary;
-        // const scaledAbove = above.multiply(aboveFactor);
-        // const scaledBelow = below.multiply(belowFactor);
+    desaturate(wavelength, amount, integrationSampleCount, wrap = true) {
+        const primary = this.locusLobeWideningStrategy(wavelength, amount, integrationSampleCount);
+        if (!wrap) {
+            return primary;
+        }
+        const above = this.locusLobeWideningStrategy(wavelength + this.wavelengthRange, amount, integrationSampleCount);
+        const below = this.locusLobeWideningStrategy(wavelength - this.wavelengthRange, amount, integrationSampleCount);
+        const twoAbove = this.locusLobeWideningStrategy(wavelength + (this.wavelengthRange * 2), amount, integrationSampleCount);
+        const twoBelow = this.locusLobeWideningStrategy(wavelength - (this.wavelengthRange * 2), amount, integrationSampleCount);
         return Colour.fromAverage([
             primary,
             above,
             below,
-        ]).multiply(8.5);
+            twoAbove,
+            twoBelow,
+        ]).multiply(5);
     }
-    locusLobeWideningStrategy(wavelength, amount) {
+    locusLobeWideningStrategy(wavelength, amount, integrationSampleCount) {
         const width = this.getWidthFromDesaturation(amount);
         const spectrum = new GaussianSpectrum(wavelength, width);
-        return Colour.fromSpectrum(spectrum, 2 ** 6);
+        return Colour.fromSpectrum(spectrum, integrationSampleCount);
     }
     ;
 }
-//# sourceMappingURL=GaussianWideningStrategy.js.map

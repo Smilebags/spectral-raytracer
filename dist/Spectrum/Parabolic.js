@@ -5,4 +5,3 @@ export default function parabolic(center, width, peak = 1) {
         return peak / (1 + (scaled ** 2));
     };
 }
-//# sourceMappingURL=Parabolic.js.map

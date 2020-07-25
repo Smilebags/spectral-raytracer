@@ -21,22 +21,28 @@ export default class ColourConverter {
         const highValue = lookup[highIndex][1];
         return new Vec3(lerp(lowValue.x, highValue.x, mix), lerp(lowValue.y, highValue.y, mix), lerp(lowValue.z, highValue.z, mix));
     }
-    static xyzToRec709(xyz) {
-        const red = (3.2404542 * xyz.x) + (-1.5371385 * xyz.y) + (-0.4985314 * xyz.z);
-        const green = (-0.969266 * xyz.x) + (1.87601080 * xyz.y) + (0.04155600 * xyz.z);
-        const blue = (0.0556434 * xyz.x) + (-0.2040259 * xyz.y) + (1.05722520 * xyz.z);
-        const adaptedRed = (0.882747 * red) + (0.114509 * green) + (0.00274331 * blue);
-        const adaptedGreen = (-0.00759616 * red) + (1.00778 * green) + (-0.000187851 * blue);
-        const adaptedBlue = (-0.00283521 * red) + (-0.00917944 * green) + (1.01201 * blue);
-        return new Vec3(adaptedRed, adaptedGreen, adaptedBlue);
-    }
-    static xyzToxyY(xyz) {
-        const x = xyz.x / (xyz.x + xyz.y + xyz.z);
-        const y = xyz.y / (xyz.x + xyz.y + xyz.z);
-        const Y = xyz.y;
-        return new Vec3(x, y, Y);
-    }
 }
+// static xyzToRec709(xyz: Vec3, adapt = true): Vec3 {
+//   if (!adapt) {
+//     const red = (3.2404542 * xyz.x) + (-1.5371385 * xyz.y) + (-0.4985314 * xyz.z);
+//     const green = (-0.9692660 * xyz.x) + (1.8760108 * xyz.y) + (0.0415560 * xyz.z);
+//     const blue = (0.0556434 * xyz.x) + (-0.2040259 * xyz.y) + (1.0572252 * xyz.z);
+//     return new Vec3(red, green, blue);
+//   }
+//   const adaptedX = (0.9531874 * xyz.x) + (-0.0265906 * xyz.y) + (0.0238731 * xyz.z);
+//   const adaptedY = (-0.0382467 * xyz.x) + (1.0288406 * xyz.y) + (0.0094060 * xyz.z);
+//   const adaptedZ = (0.0026068 * xyz.x) + (-0.0030332 * xyz.y) + (1.0892565 * xyz.z);
+//   const red = (3.2404542 * adaptedX) + (-1.5371385 * adaptedY) + (-0.4985314 * adaptedZ);
+//   const green = (-0.9692660 * adaptedX) + (1.8760108 * adaptedY) + (0.0415560 * adaptedZ);
+//   const blue = (0.0556434 * adaptedX) + (-0.2040259 * adaptedY) + (1.0572252 * adaptedZ);
+//   return new Vec3(red, green, blue);
+// }
+// static xyzToxyY(xyz: Vec3): Vec3 {
+//   const x = xyz.x / (xyz.x + xyz.y + xyz.z);
+//   const y = xyz.y / (xyz.x + xyz.y + xyz.z);
+//   const Y = xyz.y;
+//   return new Vec3(x, y, Y);
+// }
 ColourConverter.wavelengthToXYZ1931 = [
     [380.0, new Vec3(0.0014, 0.0000, 0.0065)],
     [381.0, new Vec3(0.0015, 0.0000, 0.0070)],
@@ -883,4 +889,3 @@ ColourConverter.wavelengthToXYZ2012 = [
     [829, new Vec3(1.867268E-06, 7.470770E-07, 0.000000E+00)],
     [830, new Vec3(1.762465E-06, 7.053860E-07, 0.000000E+00)],
 ];
-//# sourceMappingURL=ColourConverter.js.map

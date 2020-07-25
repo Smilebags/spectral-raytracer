@@ -17,4 +17,3 @@ export class WrappingParabolicSpectrum {
             + parabolic(this.center, this.spread, this.gain)(wavelength - this.range + this.pull);
     }
 }
-//# sourceMappingURL=WrappingParabolicSpectrum.js.map

@@ -58,4 +58,3 @@ export default class SPDSpectrum {
         return beforeComment.trim();
     }
 }
-//# sourceMappingURL=SPDSpectrum.js.map

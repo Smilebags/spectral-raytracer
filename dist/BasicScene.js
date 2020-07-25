@@ -6,4 +6,3 @@ export default class BasicScene {
         return this.aggregate.intersect(ray);
     }
 }
-//# sourceMappingURL=BasicScene.js.map
