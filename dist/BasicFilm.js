@@ -1,5 +1,5 @@
 import { Vec2, Vec3 } from "./Vec.js";
-import Colour from "./Colour.js";
+import Colour from "./Colour/Colour.js";
 import { mapValue } from "./Util.js";
 export default class BasicFilm {
     constructor(output, width = 100, height = 100) {

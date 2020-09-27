@@ -1,8 +1,7 @@
 import { Vec3, Vec2 } from "./Vec.js";
-import Colour from "./Colour.js";
-import colourSpaceProviderSingleton from "./ColourSpaceProviderSingleton.js";
-const GREY = new Colour(new Vec3(0.5, 0.5, 0.5), 'XYZ', colourSpaceProviderSingleton);
-const BLACK = new Colour(new Vec3(0.1, 0.1, 0.1), 'XYZ', colourSpaceProviderSingleton);
+import Colour from "./Colour/Colour.js";
+const GREY = new Colour(new Vec3(0.5, 0.5, 0.5), 'XYZ');
+const BLACK = new Colour(new Vec3(0.1, 0.1, 0.1), 'XYZ');
 export default class CanvasOutput {
     constructor(canvasEl, width = 100, height = 100, clipOutOfGamut = false, targetSpace = 'sRGB', background = BLACK) {
         this.canvasEl = canvasEl;

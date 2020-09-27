@@ -1,5 +1,5 @@
 import { GaussianSpectrum } from "../Spectrum/GaussianSpectrum.js";
-import Colour from "../Colour.js";
+import Colour from "../Colour/Colour.js";
 export default class GaussianWideningStrategy {
     constructor(wavelengthLow, wavelengthHigh) {
         this.wavelengthLow = wavelengthLow;

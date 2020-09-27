@@ -1,7 +1,7 @@
 import CircleGradient from "./Shapes/CircleGradient.js";
 import Dot from "./Shapes/Dot.js";
 import { Vec2, Vec3 } from "./Vec.js";
-import Colour from "./Colour.js";
+import Colour from "./Colour/Colour.js";
 import { mapValue } from "./Util.js";
 import { ParabolicSpectrum } from "./Spectrum/ParabolicSpectrum.js";
 const shift = 0.2;

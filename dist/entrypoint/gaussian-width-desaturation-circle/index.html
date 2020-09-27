@@ -31,6 +31,7 @@
             width: 1000px;
             height: 100px;
             border: 1px solid black;
+            image-rendering: crisp-edges;
         }
     </style>
 </head>
@@ -40,6 +41,7 @@
         <option value="REC.709">REC.709</option>
         <option value="REC.2020">REC.2020</option>
         <option value="DCI-P3">DCI-P3</option>
+        <option value="Display-P3">Display-P3</option>
         <option value="XYZ">XYZ</option>
         <option value="xyY">xyY</option>
     </select><br>
@@ -52,8 +54,10 @@
         step="0.1"
     ><br>
     <p id="current-wavelength"></p>
+    <p>Gaussian desaturation swatch</p>
     <canvas id="curve-swatch" class="swatch"></canvas><br>
     <br>
+    <p>Abney swatch</p>
     <canvas id="abney-swatch" class="swatch"></canvas><br>
     <button id="low">Draw draft circle</button><br />
     <button id="high">Draw high quality circle</button><br />
