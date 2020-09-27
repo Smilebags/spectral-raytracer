@@ -1,8 +1,8 @@
-import { Vec3 } from "./Vec.js";
+import { Vec3 } from "../Vec.js";
 
 import ColourConverter from "./ColourConverter.js";
-import { clamp, lerp, mapValue } from "./Util.js";
-import { ColourSpaceName, Spectrum } from "./types/index.js";
+import { clamp, lerp, mapValue } from "../Util.js";
+import { ColourSpaceName, Spectrum } from "../types/index.js";
 import { ColourSpaceProvider } from "./ColourSpaceProvider";
 import colourSpaceProviderSingleton from "./ColourSpaceProviderSingleton.js";
 
@@ -11,7 +11,7 @@ export default class Colour {
   constructor(
     public triplet: Vec3,
     public colourSpace: ColourSpaceName = 'REC.709',
-    private colourSpaceProvider: ColourSpaceProvider,
+    private colourSpaceProvider: ColourSpaceProvider = colourSpaceProviderSingleton,
   ) { }
 
   static fromSpectrum(spectrum: Spectrum, resolution = 2 ** 7, low = 400, high = 780): Colour {
@@ -100,6 +100,9 @@ export default class Colour {
   }
 
   lerp(colour: Colour, mix: number): Colour {
+    if (this.colourSpace !== colour.colourSpace) {
+      throw 'Colour spaces must match';
+    }
     return new Colour(new Vec3(
       lerp(this.triplet.x, colour.triplet.x, mix),
       lerp(this.triplet.y, colour.triplet.y, mix),
@@ -108,13 +111,17 @@ export default class Colour {
   }
 
   normalise(): Colour {
-    const max = Math.max(this.triplet.x, this.triplet.y, this.triplet.z);
+    const max = this.max;
     const triplet = new Vec3(
       this.triplet.x / max,
       this.triplet.y / max,
       this.triplet.z / max,
     );
     return new Colour(triplet, this.colourSpace, this.colourSpaceProvider);
+  }
+
+  get max(): number {
+    return Math.max(this.triplet.x, this.triplet.y, this.triplet.z);
   }
 
   get sum(): number {

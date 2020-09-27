@@ -1,8 +1,23 @@
 import GenericColourSpace, { Matrix } from "./ColourSpace.js";
 import { ColourSpaceProvider } from "./ColourSpaceProvider.js";
-import { ColourSpace } from "./types/index.js";
-import { clamp } from "./Util.js";
-import { Vec3 } from "./Vec.js";
+import { ColourSpace } from "../types/index.js";
+import { clamp } from "../Util.js";
+import { Vec3 } from "../Vec.js";
+
+function toSrgbEotf(colour: Vec3) {
+  return new Vec3(
+    colour.x < 0 ? -1 : colour.x ** (1 / 2.2),
+    colour.y < 0 ? -1 : colour.y ** (1 / 2.2),
+    colour.z < 0 ? -1 : colour.z ** (1 / 2.2),
+  );
+}
+function fromSrgbEotf(colour: Vec3) {
+  return new Vec3(
+    colour.x ** 2.2,
+    colour.y ** 2.2,
+    colour.z ** 2.2,
+  );
+}
 
 const toD65: Matrix = [
   [0.9531874, -0.0265906, 0.0238731],
@@ -65,23 +80,23 @@ const dcip3 = new GenericColourSpace(
   fromD65,
 );
 
+const displayP3: ColourSpace = {
+  name: 'Display-P3',
+  to(colour: Vec3) {
+    return toSrgbEotf(dcip3.to(colour));
+  },
+  from(colour: Vec3) {
+    return dcip3.from(fromSrgbEotf(colour));
+  },
+};
+
 const sRGB: ColourSpace = {
   name: 'sRGB',
   to(colour: Vec3) {
-    const rec = rec709.to(colour);
-    return new Vec3(
-      rec.x < 0 ? -1 : clamp(rec.x, 0, 1) ** (1 / 2.2),
-      rec.y < 0 ? -1 : clamp(rec.y, 0, 1) ** (1 / 2.2),
-      rec.z < 0 ? -1 : clamp(rec.z, 0, 1) ** (1 / 2.2),
-    );
+    return toSrgbEotf(rec709.to(colour));
   },
   from(colour: Vec3) {
-    const rec = new Vec3(
-      colour.x ** 2.2,
-      colour.y ** 2.2,
-      colour.z ** 2.2,
-    );
-    return rec709.from(rec);
+    return rec709.from(fromSrgbEotf(colour));
   },
 };
 
@@ -100,11 +115,44 @@ const xyY: ColourSpace = {
     return new Vec3(X, Y, Z);
   },
 };
+
+const XYZ = new GenericColourSpace(
+  'XYZ',
+  [
+    [1,0,0],
+    [0,1,0],
+    [0,0,1],
+  ],
+  [
+    [1,0,0],
+    [0,1,0],
+    [0,0,1],
+  ],
+);
+const XYZD65 = new GenericColourSpace(
+  'XYZD65',
+  [
+    [1,0,0],
+    [0,1,0],
+    [0,0,1],
+  ],
+  [
+    [1,0,0],
+    [0,1,0,],
+    [0,0,1],
+  ],
+  toD65,
+  fromD65,
+);
+
 const spaces: ColourSpace[] = [
   sRGB,
   rec709,
   xyY,
   rec2020,
   dcip3,
+  displayP3,
+  XYZ,
+  XYZD65,
 ];
 export default new ColourSpaceProvider(spaces);
